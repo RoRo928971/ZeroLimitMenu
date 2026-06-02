@@ -138,23 +138,24 @@
   .acc-body { display: none; padding: 6px 16px 16px; }
   .acc.open .acc-body { display: block; }
 
-  .levels { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; }
+  .levels { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
   .lvl {
-    flex: 1 1 110px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
     border: 1px solid var(--line);
     border-radius: 9px;
-    padding: 10px 8px;
-    text-align: center;
+    padding: 11px 14px;
     cursor: pointer;
     background: var(--panel-2);
     transition: .15s;
   }
   .lvl:hover { border-color: #3a3a40; }
   .lvl .lv { font-weight: 700; font-size: 13px; }
-  .lvl .lp { font-size: 12px; color: var(--silver-dim); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .lvl .lp { font-size: 13px; color: var(--silver-dim); font-variant-numeric: tabular-nums; }
   .lvl.sel { border-color: var(--red); box-shadow: 0 0 0 1px var(--red) inset, 0 4px 14px var(--red-glow); background: linear-gradient(180deg, #2a1418, #161013); }
   .lvl.sel .lp { color: var(--white); }
-  .lvl.none { flex: 0 0 auto; }
   .lvl.none .lv { color: var(--silver-dim); }
 
   /* Single-price performance item (turbo/stance) */
