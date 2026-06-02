@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZERO LIMIT CUSTOMS - 料金計算</title>
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --panel: #141416;
+    --panel-2: #1c1c1f;
+    --line: #2c2c30;
+    --silver: #d8d8dc;
+    --silver-dim: #8c8c92;
+    --red: #d32030;
+    --red-glow: rgba(211, 32, 48, .35);
+    --white: #f2f2f4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1a1a1d 0%, var(--bg) 60%),
+      var(--bg);
+    color: var(--white);
+    min-height: 100vh;
+    padding: 24px 14px 120px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+
+  /* Header */
+  .brand {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .brand .logo {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    font-weight: 800;
+    letter-spacing: 3px;
+  }
+  .brand .zero { color: var(--silver); font-size: 34px; }
+  .brand .limit { color: var(--red); font-size: 34px; text-shadow: 0 0 18px var(--red-glow); }
+  .brand .sub {
+    margin-top: 6px;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--silver-dim);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    flex: 1 1 0;
+    min-width: 140px;
+    padding: 13px 10px;
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--silver-dim);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: .18s;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .tab small { display: block; font-size: 10px; letter-spacing: 2px; margin-top: 3px; opacity: .8; }
+  .tab:hover { color: var(--silver); border-color: #3a3a40; }
+  .tab.active {
+    color: var(--white);
+    border-color: var(--red);
+    box-shadow: 0 0 0 1px var(--red) inset, 0 6px 18px var(--red-glow);
+    background: linear-gradient(180deg, #2a1418, #161013);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Simple item rows */
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .item .name { flex: 1; }
+  .item .name .ja { font-size: 15px; font-weight: 600; }
+  .item .name .en { font-size: 10px; letter-spacing: 2px; color: var(--silver-dim); margin-top: 2px; }
+  .item .price { color: var(--silver); font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; font-weight: 700; }
+
+  .qty { display: flex; align-items: center; gap: 8px; }
+  .qty button {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--white);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .qty button:hover { border-color: var(--red); color: var(--red); }
+  .qty .val { min-width: 26px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Accordion (Performance) */
+  .acc { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; background: var(--panel); }
+  .acc-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    user-select: none;
+  }
+  .acc-head .name { flex: 1; }
+  .acc-head .name .ja { font-size: 15px; font-weight: 600; }
+  .acc-head .name .en { font-size: 10px; letter-spacing: 2px; color: var(--silver-dim); margin-top: 2px; }
+  .acc-head .chev { color: var(--silver-dim); transition: .2s; font-size: 13px; }
+  .acc.open .chev { transform: rotate(180deg); color: var(--red); }
+  .acc-head .tag {
+    font-size: 11px; padding: 3px 9px; border-radius: 20px;
+    border: 1px solid var(--line); color: var(--silver-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .acc.open .acc-head .tag { color: var(--red); border-color: var(--red); }
+  .acc-body { display: none; padding: 6px 16px 16px; }
+  .acc.open .acc-body { display: block; }
+
+  .levels { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; }
+  .lvl {
+    flex: 1 1 110px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--panel-2);
+    transition: .15s;
+  }
+  .lvl:hover { border-color: #3a3a40; }
+  .lvl .lv { font-weight: 700; font-size: 13px; }
+  .lvl .lp { font-size: 12px; color: var(--silver-dim); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .lvl.sel { border-color: var(--red); box-shadow: 0 0 0 1px var(--red) inset, 0 4px 14px var(--red-glow); background: linear-gradient(180deg, #2a1418, #161013); }
+  .lvl.sel .lp { color: var(--white); }
+  .lvl.none { flex: 0 0 auto; }
+  .lvl.none .lv { color: var(--silver-dim); }
+
+  /* Single-price performance item (turbo/stance) */
+  .toggle {
+    border: 1px solid var(--line); border-radius: 9px; padding: 8px 14px;
+    background: var(--panel-2); color: var(--silver); cursor: pointer; font-weight: 700;
+    font-size: 13px; white-space: nowrap;
+  }
+  .toggle.sel { border-color: var(--red); color: var(--white); box-shadow: 0 0 0 1px var(--red) inset; background: linear-gradient(180deg, #2a1418, #161013); }
+
+  /* Summary bar */
+  .summary {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(20,20,22,.92), rgba(10,10,11,.98));
+    border-top: 1px solid var(--red);
+    box-shadow: 0 -6px 24px rgba(0,0,0,.6);
+    backdrop-filter: blur(8px);
+  }
+  .summary-inner {
+    max-width: 880px; margin: 0 auto;
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+  }
+  .summary .label { font-size: 11px; letter-spacing: 3px; color: var(--silver-dim); }
+  .summary .total { font-size: 28px; font-weight: 800; color: var(--white); font-variant-numeric: tabular-nums; flex: 1; }
+  .summary .total .cur { color: var(--red); margin-right: 4px; }
+  .summary .reset {
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--silver-dim);
+    border-radius: 9px; padding: 10px 16px; cursor: pointer; font-weight: 700; font-size: 13px;
+  }
+  .summary .reset:hover { border-color: var(--red); color: var(--red); }
+  .count { font-size: 11px; color: var(--silver-dim); }
+
+  .empty { text-align:center; color: var(--silver-dim); font-size: 12px; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="logo"><span class="zero">ZERO</span><span class="limit">LIMIT</span></div>
+    <div class="sub">CUSTOMS &nbsp; PREMIUM MECHANIC SERVICE</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="basic">基本メニュー<small>BASIC MENU</small></div>
+    <div class="tab" data-tab="goods">物販メニュー<small>GOODS MENU</small></div>
+    <div class="tab" data-tab="perf">パフォーマンスカスタム<small>PERFORMANCE</small></div>
+  </div>
+
+  <div class="panel active" id="basic"></div>
+  <div class="panel" id="goods"></div>
+  <div class="panel" id="perf"></div>
+</div>
+
+<div class="summary">
+  <div class="summary-inner">
+    <div>
+      <div class="label">合計金額 / TOTAL</div>
+      <div class="count" id="count">0 点選択中</div>
+    </div>
+    <div class="total"><span class="cur">$</span><span id="total">0</span></div>
+    <button class="reset" id="reset">リセット</button>
+  </div>
+</div>
+
+<script>
+// ---- Menu data (from ZERO LIMIT CUSTOMS price board) ----
+const data = {
+  basic: [
+    { id: 'repair',   ja: '修理',       en: 'REPAIR',          price: 25000 },
+    { id: 'mrepair',  ja: '出張修理',   en: 'MOBILE REPAIR',   price: 50000 },
+    { id: 'hrepair',  ja: 'ヘリ修理',   en: 'HELICOPTER REPAIR', price: 75000 },
+    { id: 'excustom', ja: '外装カスタム', en: 'EXTERIOR CUSTOM', price: 50000 },
+  ],
+  goods: [
+    { id: 'cleankit', ja: 'クリーニングキット', en: 'CLEANING KIT', price: 1000 },
+    { id: 'ducttape', ja: 'ダクトテープ',       en: 'DUCT TAPE',    price: 20000 },
+  ],
+  // single = on/off, levels = pick one level
+  perf: [
+    { id: 'turbo',  ja: 'ターボ',   en: 'TURBO',  type: 'single', price: 3500000 },
+    { id: 'stance', ja: 'スタンス', en: 'STANCE', type: 'single', price: 1000000 },
+    { id: 'engine', ja: 'エンジン', en: 'ENGINE', type: 'levels', levels: [1000000,1500000,2000000,3500000,5000000] },
+    { id: 'brakes', ja: 'ブレーキ', en: 'BRAKES', type: 'levels', levels: [200000,500000,1000000] },
+    { id: 'trans',  ja: 'トランスミッション', en: 'TRANSMISSION', type: 'levels', levels: [300000,500000,1000000] },
+    { id: 'susp',   ja: 'サスペンション', en: 'SUSPENSION', type: 'levels', levels: [200000,300000,400000,500000] },
+    { id: 'armor',  ja: 'アーマー', en: 'ARMOR', type: 'levels', levels: [100000,200000,300000,400000,500000] },
+  ]
+};
+
+const fmt = n => n.toLocaleString('en-US');
+const state = { qty: {}, single: {}, level: {} }; // qty[id]=n, single[id]=bool, level[id]=index(0-based) or undefined
+
+// ---- Render simple quantity menus (basic / goods) ----
+function renderQtyMenu(key) {
+  const el = document.getElementById(key);
+  el.innerHTML = data[key].map(it => `
+    <div class="item">
+      <div class="name"><div class="ja">${it.ja}</div><div class="en">${it.en}</div></div>
+      <div class="price">$${fmt(it.price)}</div>
+      <div class="qty">
+        <button data-act="dec" data-id="${it.id}">−</button>
+        <span class="val" id="q-${it.id}">0</span>
+        <button data-act="inc" data-id="${it.id}">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---- Render performance accordion ----
+function renderPerf() {
+  const el = document.getElementById('perf');
+  el.innerHTML = data.perf.map(it => {
+    if (it.type === 'single') {
+      return `
+      <div class="acc" data-id="${it.id}">
+        <div class="acc-head" data-toggle="${it.id}">
+          <div class="name"><div class="ja">${it.ja}</div><div class="en">${it.en}</div></div>
+          <span class="tag" id="tag-${it.id}">$${fmt(it.price)}</span>
+          <span class="chev">▼</span>
+        </div>
+        <div class="acc-body">
+          <div class="levels">
+            <div class="toggle" data-single="${it.id}">追加する  $${fmt(it.price)}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+    const lv = it.levels.map((p,i) => `
+      <div class="lvl" data-lvl="${it.id}" data-idx="${i}">
+        <div class="lv">Lv${i+1}</div><div class="lp">$${fmt(p)}</div>
+      </div>`).join('');
+    return `
+      <div class="acc" data-id="${it.id}">
+        <div class="acc-head" data-toggle="${it.id}">
+          <div class="name"><div class="ja">${it.ja}</div><div class="en">${it.en}</div></div>
+          <span class="tag" id="tag-${it.id}">未選択</span>
+          <span class="chev">▼</span>
+        </div>
+        <div class="acc-body">
+          <div class="levels">
+            <div class="lvl none" data-lvl="${it.id}" data-idx="-1"><div class="lv">なし</div></div>
+            ${lv}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ---- Calculate + refresh UI ----
+function recalc() {
+  let total = 0, count = 0;
+  ['basic','goods'].forEach(key => data[key].forEach(it => {
+    const n = state.qty[it.id] || 0;
+    total += n * it.price; count += n;
+    const q = document.getElementById('q-' + it.id);
+    if (q) q.textContent = n;
+  }));
+  data.perf.forEach(it => {
+    if (it.type === 'single') {
+      if (state.single[it.id]) { total += it.price; count++; }
+    } else {
+      const idx = state.level[it.id];
+      if (idx != null && idx >= 0) { total += it.levels[idx]; count++; }
+    }
+  });
+  document.getElementById('total').textContent = fmt(total);
+  document.getElementById('count').textContent = count + ' 点選択中';
+}
+
+function refreshPerfUI() {
+  data.perf.forEach(it => {
+    const tag = document.getElementById('tag-' + it.id);
+    if (it.type === 'single') {
+      const on = !!state.single[it.id];
+      const btn = document.querySelector(`[data-single="${it.id}"]`);
+      if (btn) btn.classList.toggle('sel', on);
+      if (tag) tag.textContent = on ? '$' + fmt(it.price) : '$' + fmt(it.price);
+    } else {
+      const idx = state.level[it.id];
+      document.querySelectorAll(`[data-lvl="${it.id}"]`).forEach(n => {
+        n.classList.toggle('sel', parseInt(n.dataset.idx) === (idx == null ? -2 : idx));
+      });
+      if (tag) tag.textContent = (idx != null && idx >= 0)
+        ? `Lv${idx+1} · $${fmt(it.levels[idx])}` : '未選択';
+    }
+  });
+}
+
+// ---- Events ----
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.tab).classList.add('active');
+}));
+
+document.body.addEventListener('click', e => {
+  const t = e.target;
+
+  // quantity buttons
+  const act = t.dataset.act;
+  if (act) {
+    const id = t.dataset.id;
+    state.qty[id] = Math.max(0, (state.qty[id] || 0) + (act === 'inc' ? 1 : -1));
+    recalc();
+    return;
+  }
+  // accordion toggle
+  const tg = t.closest('[data-toggle]');
+  if (tg) {
+    tg.parentElement.classList.toggle('open');
+    return;
+  }
+  // single toggle
+  const sg = t.dataset.single;
+  if (sg) {
+    state.single[sg] = !state.single[sg];
+    refreshPerfUI(); recalc();
+    return;
+  }
+  // level pick
+  const lp = t.closest('[data-lvl]');
+  if (lp) {
+    const id = lp.dataset.lvl, idx = parseInt(lp.dataset.idx);
+    state.level[id] = (state.level[id] === idx) ? -1 : idx; // click selected -> clear
+    refreshPerfUI(); recalc();
+    return;
+  }
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  state.qty = {}; state.single = {}; state.level = {};
+  refreshPerfUI(); recalc();
+});
+
+// ---- Init ----
+renderQtyMenu('basic');
+renderQtyMenu('goods');
+renderPerf();
+refreshPerfUI();
+recalc();
+</script>
+</body>
+</html>
