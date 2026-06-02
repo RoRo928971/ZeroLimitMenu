@@ -34,6 +34,14 @@
     text-align: center;
     margin-bottom: 22px;
   }
+  .brand .logo-img {
+    display: block;
+    max-width: 260px;
+    width: 60%;
+    height: auto;
+    margin: 0 auto 4px;
+    filter: drop-shadow(0 4px 18px rgba(211,32,48,.25));
+  }
   .brand .logo {
     display: inline-flex;
     align-items: baseline;
@@ -195,8 +203,10 @@
 <body>
 <div class="wrap">
   <div class="brand">
-    <div class="logo"><span class="zero">ZERO</span><span class="limit">LIMIT</span></div>
-    <div class="sub">CUSTOMS &nbsp; PREMIUM MECHANIC SERVICE</div>
+    <img class="logo-img" src="assets/logo.png" alt="ZERO LIMIT CUSTOMS"
+         onerror="this.style.display='none';document.getElementById('logoText').style.display='inline-flex';">
+    <div class="logo" id="logoText" style="display:none"><span class="zero">ZERO</span><span class="limit">LIMIT</span></div>
+    <div class="sub">PREMIUM MECHANIC SERVICE</div>
   </div>
 
   <div class="tabs">
